@@ -5,7 +5,31 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script type="text/javascript">
-        var exampleSocket = new WebSocket("ws://localhost:8080");
+        $(document).ready(function(){
+
+            var socket = new WebSocket("ws://localhost:8080");
+            socket.onopen = () => {
+              $("#textOutput").html("Connected");
+            };
+
+            socket.onmessage = (event) => {
+                var json=JSON.parse(event.data);
+            };
+
+            socket.onerror = () => {
+              $("#textOutput").html("Error - disconnected");
+            };
+
+            socket.onclose = () => {
+              $("#textOutput").html("Disconnected");
+            };
+
+            $('#send').click(function(){
+                var message = $("#message").val();
+                socket.send(message);
+            });
+
+        });
 
     </script>
 
