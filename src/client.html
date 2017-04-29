@@ -5,23 +5,27 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script type="text/javascript">
+
+        var socket;
+
         $(document).ready(function(){
 
             var socket = new WebSocket("ws://localhost:8080");
             socket.onopen = () => {
-              $("#textOutput").html("Connected");
+              $("#connectState").html("Connected");
             };
 
             socket.onmessage = (event) => {
-                var json=JSON.parse(event.data);
+                var text= event.data;
+                $("#messageOutput").html(text);
             };
 
             socket.onerror = () => {
-              $("#textOutput").html("Error - disconnected");
+              $("#connectState").html("Error - disconnected");
             };
 
             socket.onclose = () => {
-              $("#textOutput").html("Disconnected");
+              $("#connectState").html("Disconnected");
             };
 
             $('#send').click(function(){
@@ -38,7 +42,8 @@
 </head>
 <body>
     <input type="button" id="connect" value="connect" />
-    <div id="textOutput">tekst</div>
+    <div id="connectState">tekst</div>
+    <div id="messageOutput">tekst</div>
     <input type="text" id="message" value="melding"/> <br/>
     <input type="button" id="send" value="send" />
 </body>
