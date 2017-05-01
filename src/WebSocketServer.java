@@ -93,6 +93,13 @@ public class WebSocketServer extends Thread {
     }
 
     // methods for managing connection
+    public void openServer() throws IOException{
+        // start listening for connections
+        server = new ServerSocket(PORT);
+    }
+    public void closeServer() throws IOException{
+        server.close();
+    }
     // establish connection to client and verify handshake
     public void awaitConnection() throws IOException {
         do{
@@ -120,11 +127,9 @@ public class WebSocketServer extends Thread {
     public void serve(){
         try{
 
-            // start listening for connections
-            server = new ServerSocket(PORT);
+            openServer();
 
             while(true){
-
 
                 // establish connection to client
                 awaitConnection();
@@ -150,7 +155,7 @@ public class WebSocketServer extends Thread {
         }finally {
             try {
                 closeConnection();
-                server.close();
+                closeServer();
             } catch (IOException e) {
                 e.printStackTrace();
             }
