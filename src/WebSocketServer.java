@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 /**
  * Created by Ein fugel on 01.05.2017.
  */
-public abstract class WebSocketServer extends Thread {
+public class WebSocketServer extends Thread {
 
     public final static int OP_CONTINUATION = 0;
     public final static int OP_TEXT = 1;
@@ -33,15 +33,17 @@ public abstract class WebSocketServer extends Thread {
        PORT = port;
     }
 
+    // override these methods to implement own functionality
+    // fires when a client has connected
     public void onConnect(){}
+    // fires when a text message has been received
     public void onMessage(String message){}
+    // fires when a connection to a client has been closed
     public void onClose(){}
 
-    public void receiveMessage(Frame message){
-        String decodedMessage = decodePayload(message.payload, message.MASK);
-        onMessage(decodedMessage);
-    }
-    public void sendShortMessage(String message) throws IOException {
+    // methods for sending to client
+    // send short (<126 byte) text message
+    protected void sendShortMessage(String message) throws IOException {
 
         byte[] header = assembleFrameHeader(1,0,0,0, OP_TEXT, 0,message.length());
         byte[] payload = message.getBytes();
@@ -49,19 +51,14 @@ public abstract class WebSocketServer extends Thread {
         out.write(header);
         out.write(payload);
     }
-    public void sendControlFrame(int opcode) throws IOException {
+    // send control frame with no payload (close, ping, etc.)
+    protected void sendControlFrame(int opcode) throws IOException {
         byte[] header = assembleFrameHeader(1,0,0,0,opcode ,0,0);
         out.write(header);
     }
-    public void awaitConnection() throws IOException {
-        do{
-            client = server.accept();
-            in = client.getInputStream();
-            out = client.getOutputStream();
-        }while(handshake() != 0);
 
-        onConnect();
-    }
+    // methods for receiving from client
+    // waits for frame from client and returns it
     public Frame awaitFrame() throws IOException {
 
 
@@ -81,13 +78,36 @@ public abstract class WebSocketServer extends Thread {
                 (header[0] >> 5) & 0b1,
                 (header[0] >> 4) & 0b1,
                 header[0] & 0b1111,
-                    mask,
+                mask,
                 payloadLength,
                 payLoad
-                );
+        );
 
         return received;
     }
+    // decodes message from text frame and returns it
+    public String receiveMessage(Frame message){
+        String decodedMessage = decodePayload(message.payload, message.MASK);
+        onMessage(decodedMessage);
+        return decodedMessage;
+    }
+
+    // methods for managing connection
+    // establish connection to client and verify handshake
+    public void awaitConnection() throws IOException {
+        do{
+            // establish connection
+            client = server.accept();
+            in = client.getInputStream();
+            out = client.getOutputStream();
+
+            // verify that handshake is correct
+        }while(handshake() != 0);
+
+        // callback method
+        onConnect();
+    }
+    // close connection to client
     public void closeConnection() throws IOException{
         sendControlFrame(OP_CLOSE);
         in.close();
@@ -96,6 +116,7 @@ public abstract class WebSocketServer extends Thread {
         onClose();
     }
 
+    // method for running the server
     public void serve(){
         try{
 
@@ -135,9 +156,11 @@ public abstract class WebSocketServer extends Thread {
             }
         }
     }
+    // method for running the server in a thread
     public void run(){serve();}
 
     // helper methods
+    // makes putting together a header easier
     private byte[] assembleFrameHeader(int fin, int rsv1, int rsv2, int rsv3, int opcode, int mask, int payloadLen){
         int FIN = fin << 7;
         int RSV1 = rsv1 << 6;
@@ -153,6 +176,7 @@ public abstract class WebSocketServer extends Thread {
 
         return header;
     }
+    // handshake protocol
     private int handshake() throws IOException {
 
         Scanner inData = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n");
@@ -194,6 +218,7 @@ public abstract class WebSocketServer extends Thread {
 
         return -1;
     }
+    // decode masked message
     private String decodePayload(byte[] payload, byte[] mask){
         String decoded = "";
 
