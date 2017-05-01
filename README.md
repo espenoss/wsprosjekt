@@ -44,6 +44,28 @@ Det er også mulig å kjøre serveren i egen tråd:
     }
 ```
 
+Hvis man skulle ha lyst til å sette opp ting manuelt må man minimalt:
+```java
+    public static void manualServer() throws IOException{
+        WebSocketServer server = new WebSocketServer(80);
+
+        // start listening on given port
+        server.openServer();
+        // wait for client to connect
+        server.awaitConnection();
+        // send message to client
+        server.sendShortMessage("Heisann!");
+        // wait for reply
+        Frame received = server.awaitFrame();
+        // assume its a message and decode it
+        String reply = server.receiveMessage(received);
+        System.out.println(reply);
+        // thats all we wanted to do, close connection and close down the server
+        server.closeConnection();
+        server.closeServer();
+    }
+```
+
 
 
 
