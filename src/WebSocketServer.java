@@ -16,6 +16,13 @@ import java.util.regex.Pattern;
  */
 public abstract class WebSocketServer extends Thread {
 
+    public final static int OP_CONTINUATION = 0;
+    public final static int OP_TEXT = 1;
+    public final static int OP_BINARY = 2;
+    public final static int OP_CLOSE = 8;
+    public final static int OP_PING = 9;
+    public final static int OP_PONG = 10;
+
     private final int PORT;
     private Socket client;
     private ServerSocket server;
@@ -27,8 +34,125 @@ public abstract class WebSocketServer extends Thread {
     }
 
     public void onConnect(){}
-    public abstract void onMessage(String message) throws IOException;
+    public void onMessage(String message){}
+    public void onClose(){}
 
+    public void receiveMessage(Frame message){
+        String decodedMessage = decodePayload(message.payload, message.MASK);
+        onMessage(decodedMessage);
+    }
+    public void sendShortMessage(String message) throws IOException {
+
+        byte[] header = assembleFrameHeader(1,0,0,0, OP_TEXT, 0,message.length());
+        byte[] payload = message.getBytes();
+
+        out.write(header);
+        out.write(payload);
+    }
+    public void sendControlFrame(int opcode) throws IOException {
+        byte[] header = assembleFrameHeader(1,0,0,0,opcode ,0,0);
+        out.write(header);
+    }
+    public void awaitConnection() throws IOException {
+        do{
+            client = server.accept();
+            in = client.getInputStream();
+            out = client.getOutputStream();
+        }while(handshake() != 0);
+
+        onConnect();
+    }
+    public Frame awaitFrame() throws IOException {
+
+
+        byte[] header = new byte[2];
+        byte[] mask = new byte[4];
+
+        in.read(header,0,2);
+        in.read(mask, 0, 4);
+
+        int payloadLength = (Byte.toUnsignedInt(header[1]) & 0b1111111); // Read bits 9 to 15 and convert to integer
+        byte[] payLoad = new byte[payloadLength];
+        in.read(payLoad,0,payloadLength);
+
+
+        Frame received = new Frame( (header[0] >> 7) & 0b1,
+                (header[0] >> 6) & 0b1,
+                (header[0] >> 5) & 0b1,
+                (header[0] >> 4) & 0b1,
+                header[0] & 0b1111,
+                    mask,
+                payloadLength,
+                payLoad
+                );
+
+        return received;
+    }
+    public void closeConnection() throws IOException{
+        sendControlFrame(OP_CLOSE);
+        in.close();
+        out.close();
+        client.close();
+        onClose();
+    }
+
+    public void serve(){
+        try{
+
+            // start listening for connections
+            server = new ServerSocket(PORT);
+
+            while(true){
+
+
+                // establish connection to client
+                awaitConnection();
+
+                boolean connectionOpen = true;
+
+                while(connectionOpen){
+                    Frame receivedFrame= awaitFrame();
+
+                    if(receivedFrame.OPCODE == OP_TEXT){
+                        receiveMessage(receivedFrame);
+                    }else if(receivedFrame.OPCODE == OP_PING){
+                        sendControlFrame(OP_PONG);
+                    }else if(receivedFrame.OPCODE == OP_CLOSE){
+                        connectionOpen = false;
+                        closeConnection();
+                    }
+                }
+            }
+
+        }catch (IOException e){
+            e.printStackTrace();
+        }finally {
+            try {
+                closeConnection();
+                server.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public void run(){serve();}
+
+    // helper methods
+    private byte[] assembleFrameHeader(int fin, int rsv1, int rsv2, int rsv3, int opcode, int mask, int payloadLen){
+        int FIN = fin << 7;
+        int RSV1 = rsv1 << 6;
+        int RSV2 = rsv2 << 5;
+        int RSV3 = rsv3 << 4;
+        int OPCODE = opcode;
+        int MASK = mask << 7;
+        int PAYLOADLEN = payloadLen;
+
+        byte[] header = new byte[2];
+        header[0] = (byte) (FIN + RSV1 + RSV2 + RSV3 + OPCODE);
+        header[1] = (byte) (MASK + PAYLOADLEN);
+
+        return header;
+    }
     private int handshake() throws IOException {
 
         Scanner inData = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n");
@@ -70,65 +194,13 @@ public abstract class WebSocketServer extends Thread {
 
         return -1;
     }
-    protected String receiveMessage() throws IOException {
-
-        byte[] header = new byte[2];
-        byte[] mask = new byte[4];
-
-        // Get message headers and message mask
-        in.read(header,0,2);
-        in.read(mask,0,4);
-
-        int payloadLength = (Byte.toUnsignedInt(header[1]) & 0b111111); // Read bits 9 to 15 and convert to integer
-
-        // Get payload
-        byte[] message = new byte[payloadLength];
-        in.read(message,0,payloadLength);
-
+    private String decodePayload(byte[] payload, byte[] mask){
         String decoded = "";
 
-        decoded = "";
-        for (int i=0;i<payloadLength;i++){
-            decoded += (char)(message[i]^mask[i%4]);
+        for (int i=0;i<payload.length;i++){
+            decoded += (char)(payload[i]^mask[i%4]);
         }
 
         return decoded;
     }
-    protected void sendMessage(String message) throws IOException {
-        int FIN = (1 << 7);
-        int OPCODE = 1;
-        int MASK = (0 << 7);
-        int PLENGTH = message.length();
-        byte[] payload = message.getBytes();
-
-        byte[] header = new byte[2];
-        header[0] = (byte) (FIN + OPCODE);
-        header[1] = (byte) (MASK + PLENGTH);
-
-        out.write(header);
-        out.write(payload);
-    }
-
-    public void serve(){
-        try{
-            server = new ServerSocket(PORT);
-
-            do{
-                client = server.accept();
-                in = client.getInputStream();
-                out = client.getOutputStream();
-            }while(handshake() != 0);
-
-            onConnect();
-
-            onMessage(receiveMessage());
-
-
-        }catch (IOException e){
-
-        }finally {
-
-        }
-   }
-    public void run(){serve();}
 }

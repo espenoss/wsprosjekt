@@ -14,13 +14,22 @@ public class WebSocketServerImpl extends WebSocketServer{
     }
 
     @Override
-    public void onMessage(String message) throws IOException {
+    public void onMessage(String message){
         System.out.println(message);
-        sendMessage(message);
+        try {
+            sendShortMessage(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void main(String[] args) {
+    @Override
+    public void onClose(){
+        System.out.println("Client disconnected");
+    }
+
+    public static void main(String[] args) throws IOException {
         WebSocketServer server = new WebSocketServerImpl(80);
-        server.run();
+        server.serve();
     }
 }
