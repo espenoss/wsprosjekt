@@ -26,13 +26,10 @@ public class testSocket {
         OutputStream out = client.getOutputStream();
 
         Scanner inData = new Scanner(in,"UTF-8").useDelimiter("\\r\\n\\r\\n");
-
         String data = inData.next();
-
         Matcher get = Pattern.compile("^GET").matcher(data);
 
         if (get.find()) {
-
             // Obtain the value of Sec-WebSocket-Key request header without any leading and trailing whitespace
             Matcher match = Pattern.compile("Sec-WebSocket-Key: (.*)").matcher(data);
             match.find();
@@ -58,7 +55,7 @@ public class testSocket {
 
         // Connection established
 
-        // Receive messages until "avlsutt is received"
+        // Receive messages until "avlsutt" is received
         String decoded = "";
 
         while(!decoded.equals("avslutt")){
@@ -78,10 +75,7 @@ public class testSocket {
             in.read(message,0,payloadLength);
 
 
-            decoded = "";
-            for (int i=0;i<payloadLength;i++){
-                decoded += (char)(message[i]^mask[i%4]);
-            }
+
 
             cPrint(decoded);
         }

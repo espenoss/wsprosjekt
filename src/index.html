@@ -10,7 +10,7 @@
 
         $(document).ready(function(){
 
-            var socket = new WebSocket("ws://localhost:8080");
+            var socket = new WebSocket("ws://localhost:80");
             socket.onopen = () => {
               $("#connectState").html("Connected");
             };
@@ -41,9 +41,8 @@
     <title>Testklient</title>
 </head>
 <body>
-    <input type="button" id="connect" value="connect" />
-    <div id="connectState">tekst</div>
-    <div id="messageOutput">tekst</div>
+    <div id="connectState">[No connection]</div>
+    <div id="messageOutput">[No message received]</div>
     <input type="text" id="message" value="melding"/> <br/>
     <input type="button" id="send" value="send" />
 </body>
