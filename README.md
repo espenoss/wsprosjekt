@@ -44,7 +44,7 @@ Det er også mulig å kjøre serveren i egen tråd:
     }
 ```
 
-Hvis man skulle ha lyst til å sette opp ting manuelt må man minimalt:
+Hvis man skulle ha lyst til å sette opp ting manuelt:
 ```java
     public static void manualServer() throws IOException{
         WebSocketServer server = new WebSocketServer(80);
