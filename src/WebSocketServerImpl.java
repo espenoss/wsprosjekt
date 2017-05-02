@@ -1,10 +1,5 @@
 import java.io.IOException;
 
-/**
- * Created by Ein fugel on 01.05.2017.
- */
-
-
 // example implementation of echo server
 public class WebSocketServerImpl extends WebSocketServer{
     WebSocketServerImpl(int port){
@@ -51,7 +46,9 @@ public class WebSocketServerImpl extends WebSocketServer{
     }
 
     public static void main(String[] args) throws IOException {
-        WebSocketServer server = new WebSocketServerImpl(80);
-        server.run();
+        //WebSocketServer server = new WebSocketServerImpl(80);
+        //server.run();
+
+        manualServer();
     }
 }
