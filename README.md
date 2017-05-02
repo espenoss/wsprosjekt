@@ -7,6 +7,11 @@ WebSocketServer-klassen inneholder selve biblioteket. WebSocketServerImpl er et 
 
 Egen funksjonalitet implementeres ved å overstyre *onConnect*, *onMessage* og *onClose* metodene i WebSocketServer.
 ```java
+public class WebSocketServerImpl extends WebSocketServer{
+    WebSocketServerImpl(int port){
+        super(port);
+    }
+
     @Override
     public void onConnect() {
         System.out.println("Client connected");
@@ -26,6 +31,7 @@ Egen funksjonalitet implementeres ved å overstyre *onConnect*, *onMessage* og *
     public void onClose(){
         System.out.println("Client disconnected");
     }
+}
 ```
 
 Man kan da starte serveren ved å instantiere subklassen man har laget og kjøre *serve* metoden.
