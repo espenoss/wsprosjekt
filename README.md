@@ -1,7 +1,7 @@
 ## WebSocket Server Java Bibliotek
 
 Bibliotek for å sette opp WebSocket server i java. Kan kommunisere med en klient og send og motta korte meldinger (<126 byte).
-WebSocketServer- og Frame-klassene er nødvendige. WebSocketServerImpl er et eksempel på en enkel ekko-server. index.html er en simpel testklient.
+WebSocketServer-klassen inneholder selve biblioteket. WebSocketServerImpl er et eksempel på en enkel ekko-server. index.html er en simpel testklient.
 
 ### Bruksmåte
 
