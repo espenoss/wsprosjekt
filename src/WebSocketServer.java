@@ -113,12 +113,12 @@ public class WebSocketServer extends Thread {
     }
     // close connection to client
     public void closeConnection() throws IOException{
+        onClose();
         sendControlFrame(OP_CLOSE);
         in.close();
         out.close();
         client.close();
-        onClose();
-    }
+   }
 
     // method for running the server
     public void serve(){
